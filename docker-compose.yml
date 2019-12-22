@@ -1,0 +1,64 @@
+version: '2'
+services:
+    websocket-group:
+        image: waxiesdr/websocket-group:latest
+        environment:
+            - TURN_SECRET=${TURN_SECRET}
+            - API_KEY=${API_KEY}
+        restart: on-failure
+        networks:
+            - net
+
+    haproxy:
+        image: haproxy:latest
+        ports:
+            - 80:80
+            - 443:443
+            - 3478:3478 
+            - 3479:3479 
+        volumes:
+            - ssl-keys:/keys
+            - haproxy-socket:/socket
+            - ./haproxy:/usr/local/etc/haproxy:ro
+        restart: on-failure
+        networks:
+            - net
+
+    coturn:
+        image: waxiesdr/coturn:latest
+        environment:
+            - TURN_SECRET=${TURN_SECRET}
+            - SSL=/keys/cert.pem
+            - PROXY_PORT=5555
+        volumes:
+            - ssl-keys:/keys:ro              
+        network_mode: host
+        restart: on-failure
+    
+    certbot:
+        image: bertoldvdb/certbot-ocsp:latest
+        environment:
+            - KEYDIR=/keys
+            - HAPROXY_SOCKET=/haproxy/admin.sock
+            - DNSNAME=${DNSNAME}
+            - RELOAD=relay_haproxy_1 relay_coturn_1
+        volumes:
+            - ssl-keys:/keys 
+            - haproxy-socket:/haproxy
+            - /var/run/docker.sock:/var/run/docker.sock
+        networks:
+            - net
+        restart: on-failure
+            
+volumes:
+    ssl-keys:
+        driver: local
+    haproxy-socket:
+        driver: local
+
+networks:
+    net:
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.30.0.0/24
