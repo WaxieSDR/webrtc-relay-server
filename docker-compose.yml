@@ -4,6 +4,7 @@ services:
         image: waxiesdr/websocket-group:latest
         environment:
             - TURN_SECRET=${TURN_SECRET}
+            - TURN_HOST=${TURN_HOST}
             - API_KEY=${API_KEY}
         restart: on-failure
         networks:
