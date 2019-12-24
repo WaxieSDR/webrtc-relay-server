@@ -1,4 +1,4 @@
-version: '2'
+version: '2.2'
 services:
     websocket-group:
         image: waxiesdr/websocket-group:latest
@@ -23,7 +23,8 @@ services:
             - ./haproxy:/usr/local/etc/haproxy:ro
         restart: on-failure
         networks:
-            - net
+            net:
+                ipv6_address: fd00:dead::a
 
     coturn:
         image: waxiesdr/coturn:latest
@@ -59,7 +60,9 @@ volumes:
 
 networks:
     net:
+        enable_ipv6: true
         ipam:
             driver: default
             config:
                 - subnet: 172.30.0.0/24
+                - subnet: fd00:dead::/64
